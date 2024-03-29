@@ -8,4 +8,6 @@ print(f"The current date and time is {now}.")
 
 
 def get_time_stamp():
-    return datetime.now()
+    date = datetime.strptime(datetime.now, "%Y-%m-%dT%H;%M:%S.%fZ")
+    formatted_date = date.strftime("%Y-%m-%d/%H:%M:%S")
+    return formatted_date
