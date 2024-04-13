@@ -2,8 +2,11 @@ from docx import Document
 from pathlib import Path
 import pandas as pd
 
+from tools import get_time_stamp
+
 from dotenv import load_dotenv
 import os
+import shutil
 
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -24,7 +27,7 @@ def replace_string_in_docx(docx_filename, old_string, new_string, output_path):
         for run in p.runs:
             if old_string in run.text:
                 run.text = run.text.replace(old_string, new_string)
-    doc.save(f'{output_path}_{file_name}')
+    doc.save(f"{output_path}_{file_name}")
 
 
 def read_names(file_path):
@@ -37,35 +40,37 @@ def read_names(file_path):
 
 def send_email(mail_user, mail_pass, mail_receiver):
     # QQ Mail SMTP server address and port
-    smtp_server = 'smtp.qq.com'
+    smtp_server = "smtp.qq.com"
     smtp_port = 465  # SSL
 
     # Your QQ Mail account and password
-    mail_user = 'your-account@qq.com'
+    mail_user = "your-account@qq.com"
     # If you have enabled SMTP service on QQ Mail, use the authorization code.
-    mail_pass = 'your-password'
+    mail_pass = "your-password"
 
     # Email content
-    subject = 'Hello from Python'
-    content = 'This is a test email sent from Python.'
+    subject = "Hello from Python"
+    content = "This is a test email sent from Python."
 
     # Create a multipart message
     msg = MIMEMultipart()
-    msg['From'] = mail_user
-    msg['To'] = 'receiver@example.com'
-    msg['Subject'] = subject
+    msg["From"] = mail_user
+    msg["To"] = "receiver@example.com"
+    msg["Subject"] = subject
 
     # Attach the email content
-    msg.attach(MIMEText(content, 'plain'))
+    msg.attach(MIMEText(content, "plain"))
 
     # Specify the file path of your attachment
-    file_path = '/path/to/your/file'
+    file_path = "/path/to/your/file"
 
     # Create a MIMEBase object for the attachment
-    part = MIMEBase('application', 'octet-stream')
-    part.set_payload(open(file_path, 'rb').read())
+    part = MIMEBase("application", "octet-stream")
+    part.set_payload(open(file_path, "rb").read())
     encoders.encode_base64(part)
-    part.add_header('Content-Disposition','attachment; filename="%s"' % os.path.basename(file_path))
+    part.add_header(
+        "Content-Disposition", 'attachment; filename="%s"' % os.path.basename(file_path)
+    )
 
     # Attach the file to the email
     msg.attach(part)
@@ -73,24 +78,40 @@ def send_email(mail_user, mail_pass, mail_receiver):
     try:
         server = smtplib.SMTP_SSL(smtp_server, smtp_port)
         server.login(mail_user, mail_pass)
-        server.sendmail(mail_user, ['receiver@example.com'], msg.as_string())
+        server.sendmail(mail_user, ["receiver@example.com"], msg.as_string())
         server.quit()
-        print('Email sent successfully.')
+        print("Email sent successfully.")
     except smtplib.SMTPException as e:
-        print('Error:', e)
+        print("Error:", e)
 
 
 if __name__ == "__main__":
+
+    time_stamp = get_time_stamp()
+
+    source_res_dir = f"{BASE_PATH}/result"
+    source_origin_dir = f"{BASE_PATH}/source"
+    destination_dir = f"{BASE_PATH}/history/{time_stamp}/result"
+
+    files = os.listdir(source_res_dir)
+    for file in files:
+        source = os.path.join(source_res_dir, file)
+        destination = os.path.join(destination_dir, file)
+
+        # create the destination directory if it doesn't exist
+        os.makedirs(os.path.dirname(destination), exist_ok=True)
+        shutil.move(source, destination)
+
     # Get environment variables
-    mail_user = os.getenv('mail_user')
-    mail_pass = os.getenv('mail_pass')
-    mail_receiver = os.getenv('mail_receiver')
+    # mail_user = os.getenv('mail_user')
+    # mail_pass = os.getenv('mail_pass')
+    # mail_receiver = os.getenv('mail_receiver')
 
-    source_cert = BASE_PATH / 'source' / '2024CPD证书.docx'
-    source_people = BASE_PATH / 'source' / 'names.xlsx'
+    # source_cert = BASE_PATH / 'source' / '2024CPD证书.docx'
+    # source_people = BASE_PATH / 'source' / 'names.xlsx'
 
-    print(BASE_PATH)
-    people = read_names(source_people)
-    for name in people.keys():
-        print(type(name))
-        replace_string_in_docx(source_cert, 'LEI    yao', name, f'{BASE_PATH}/res/{name}')
+    # print(BASE_PATH)
+    # people = read_names(source_people)
+    # for name in people.keys():
+    #     print(type(name))
+    #     replace_string_in_docx(source_cert, 'LEI    yao', name, f'{BASE_PATH}/res/{name}')
